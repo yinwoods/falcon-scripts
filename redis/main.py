@@ -81,20 +81,21 @@ def main():
                     continue
 
             i = {
-                'Metric': '%s.%s' % (metric, key),
-                'Endpoint': endpoint,
-                'Timestamp': timestamp,
-                'Step': step,
-                'Value': value,
-                'CounterType': vtype,
-                'TAGS': tags
+                'metric': '%s.%s' % (metric, key),
+                'endpoint': endpoint,
+                'timestamp': timestamp,
+                'step': step,
+                'value': value,
+                'counterType': vtype,
+                'tags': tags
             }
             p.append(i)
 
     url = agent_config['url']
+    print(json.dumps(p, indent=4))
     headers = {"Content-Type": "application/json"}
     response = requests.post(url=url, headers=headers, data=json.dumps(p))
-    print('SUCCESS' if response.status_code else 'FAELED')
+    print(response.text)
 
 
 if __name__ == '__main__':
