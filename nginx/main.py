@@ -1,13 +1,16 @@
 # 使用说明：https://github.com/GuyCheung/falcon-ngx_metric
 
 import requests
-import sys, urllib, time, json, traceback
-from optparse import OptionParser
+import sys
+import time
+import json
+import traceback
 from configparser import ConfigParser
+
 
 class Histogram(object):
 
-    def __init__(self, values = None):
+    def __init__(self, values=None):
         self.values = []
         self.dirty = False
 
@@ -26,7 +29,7 @@ class Histogram(object):
             v_s = map(lambda x: float(x), values.strip(', ').split(','))
             self.values += v_s
 
-        elif _t == type(None):
+        elif isinstance(_t, type(None)):
             return
 
         self.dirty = True
@@ -51,11 +54,11 @@ class Histogram(object):
             return 0.0
 
         pos = min(int(percentile * len(self.values)), len(self.values))
-        #return float(self.sortValues[pos]) / (pos + 1)
         return self.values[pos]
 
     def percentiles(self):
-        return [self.percentile(0.5), self.percentile(0.75), self.percentile(0.95), self.percentile(0.99)]
+        return [self.percentile(0.5), self.percentile(0.75),
+                self.percentile(0.95), self.percentile(0.99)]
 
 
 class Render(object):
@@ -83,10 +86,10 @@ class Render(object):
         return c.service_stat() if c.enable else []
 
     @staticmethod
-    def get_service_name(ngx_host = None):
+    def get_service_name(ngx_host=None):
         global options
 
-        if None != ngx_host and '' != ngx_host and options['use_ngx_host']:
+        if ngx_host and '' != ngx_host and options['use_ngx_host']:
             return ngx_host
 
         return options['service']
@@ -140,6 +143,7 @@ class Render(object):
         v = inc + Render.hash_default_get(h, key, 0)
         h[key] = v
 
+
 class RenderQueryCount(Render):
 
     metric = 'query_count'
@@ -157,25 +161,29 @@ class RenderQueryCount(Render):
         v = int(la[3])
         Render.hash_set_incr(RenderQueryCount.service_count, Render.get_service_name(la[1]), v)
 
-        return Render.pack(RenderQueryCount.metric, {'api': la[2], 'service': Render.get_service_name(la[1])}, v)
+        return Render.pack(RenderQueryCount.metric,
+                           {'api': la[2], 'service': Render.get_service_name(la[1])}, v)
 
     @staticmethod
     def _before_render(la):
-        RenderErrRate.push(key=RenderQueryCount.metric, service=Render.get_service_name(la[1]), api=la[2], value=int(la[3]))
+        RenderErrRate.push(key=RenderQueryCount.metric,
+                           service=Render.get_service_name(la[1]), api=la[2], value=int(la[3]))
 
     @staticmethod
     def service_stat():
         res = []
         for service, value in RenderQueryCount.service_count.items():
             res.append(Render.pack(RenderQueryCount.metric,
-                {'api': Render.reserved_service_name, 'service': service}, value))
+                       {'api': Render.reserved_service_name, 'service': service}, value))
 
         return res
 
     @staticmethod
     def _before_service_stat():
         for service, value in RenderQueryCount.service_count.items():
-            RenderErrRate.push(key=RenderQueryCount.metric, service=service, api=Render.reserved_service_name, value=value)
+            RenderErrRate.push(key=RenderQueryCount.metric, service=service,
+                               api=Render.reserved_service_name, value=value)
+
 
 class RenderUpstreamContacts(Render):
     metric = 'upstream_contacts'
@@ -193,14 +201,15 @@ class RenderUpstreamContacts(Render):
         v = int(la[3])
         Render.hash_set_incr(RenderUpstreamContacts.contacts, Render.get_service_name(la[1]), v)
 
-        return Render.pack(RenderUpstreamContacts.metric, {'api': la[2], 'service': Render.get_service_name(la[1])}, v)
+        return Render.pack(RenderUpstreamContacts.metric,
+                           {'api': la[2], 'service': Render.get_service_name(la[1])}, v)
 
     @staticmethod
     def service_stat():
         res = []
         for service, value in RenderUpstreamContacts.contacts.items():
             res.append(Render.pack(RenderUpstreamContacts.metric,
-                {'api': Render.reserved_service_name, 'service': service}, value))
+                       {'api': Render.reserved_service_name, 'service': service}, value))
 
         return res
 
@@ -248,7 +257,7 @@ class RenderErrCount(Render):
     @staticmethod
     def service_stat():
         res = []
-        tags = { 'api': Render.reserved_service_name }
+        tags = {'api': Render.reserved_service_name}
 
         for service, d in RenderErrCount.service_count_detail.items():
             tags['service'] = service
@@ -267,7 +276,9 @@ class RenderErrCount(Render):
                 sc += v
                 RenderErrRate.push(key=RenderErrCount.metric, service=service, api=api, value=v)
 
-            RenderErrRate.push(key=RenderErrCount.metric, service=service, api=Render.reserved_service_name, value=sc)
+            RenderErrRate.push(key=RenderErrCount.metric, service=service,
+                               api=Render.reserved_service_name, value=sc)
+
 
 class RenderErrRate(Render):
 
@@ -295,9 +306,11 @@ class RenderErrRate(Render):
                 ec = Render.hash_default_get(d, RenderErrCount.metric, 0)
                 total = qc + ec
 
-                res.append(Render.pack(RenderErrRate.metric, {'api': api, 'service': service}, 0 if total == 0 else float(ec)/total))
+                res.append(Render.pack(RenderErrRate.metric,
+                           {'api': api, 'service': service}, 0 if total == 0 else float(ec)/total))
 
         return res
+
 
 class RenderLatency(Render):
 
@@ -325,16 +338,18 @@ class RenderLatency(Render):
         sl = sl + la[3]
         RenderLatency.service_latency[service] = sl
 
-        return RenderLatency.__pack({ 'service': service, 'api': la[2] }, la[3])
+        return RenderLatency.__pack({'service': service, 'api': la[2]}, la[3])
 
     @staticmethod
     def service_stat():
         res = []
 
         for service, sl in RenderLatency.service_latency.items():
-            res += RenderLatency.__pack({'service':service, 'api': Render.reserved_service_name}, sl)
+            res += RenderLatency.__pack({'service': service,
+                                         'api': Render.reserved_service_name}, sl)
 
         return res
+
 
 class RenderDetailLatency(Render):
 
@@ -357,7 +372,7 @@ class RenderDetailLatency(Render):
         item_obj[service] = ser_obj
         RenderDetailLatency.service_latency[la[0]] = item_obj
 
-        return Render.pack(la[0], { 'service': service, 'api': la[2] }, float(la[3]))
+        return Render.pack(la[0], {'service': service, 'api': la[2]}, float(la[3]))
 
     @staticmethod
     def service_stat():
@@ -365,10 +380,12 @@ class RenderDetailLatency(Render):
 
         for item, item_obj in RenderDetailLatency.service_latency.items():
             for service, data in item_obj.items():
-                res += (Render.pack(item, {'service': service, 'api': Render.reserved_service_name}, data['sum'] / data['len']), )
+                res += (Render.pack(item, {'service': service, 'api': Render.reserved_service_name},
+                        data['sum'] / data['len']), )
 
         RenderDetailLatency.service_latency = {}
         return res
+
 
 class RenderUpstreamLatency(Render):
 
@@ -382,7 +399,8 @@ class RenderUpstreamLatency(Render):
         latencys = histo.percentiles()
 
         keys = ['50th', '75th', '95th', '99th']
-        return map(lambda i: Render.pack(RenderUpstreamLatency.metric+keys[i], tags, latencys[i]), range(4))
+        return map(lambda i: Render.pack(RenderUpstreamLatency.metric+keys[i], tags, latencys[i]),
+                   range(4))
 
     @staticmethod
     def render(la):
@@ -403,9 +421,11 @@ class RenderUpstreamLatency(Render):
         res = []
 
         for service, sl in RenderUpstreamLatency.upstream_latency.items():
-            res += RenderUpstreamLatency.__pack({'service': service, 'api': Render.reserved_service_name}, sl)
+            res += RenderUpstreamLatency.__pack({'service': service,
+                                                 'api': Render.reserved_service_name}, sl)
 
         return res
+
 
 renders = {
     'query_count': RenderQueryCount,
@@ -430,11 +450,13 @@ derive_renders = {
     'err_rate': RenderErrRate,
 }
 
+
 def append_datapoint(datapoints, datapoint):
     if type(datapoint) == dict:
         datapoints.append(datapoint)
     elif type(datapoint) == list:
         datapoints += datapoint
+
 
 def collect(url):
     global options
@@ -443,7 +465,6 @@ def collect(url):
     try:
         content = requests.get(url).text
         print(content)
-        ts = int(time.time())
 
         for line in content.splitlines():
             la = line.strip().split(options['ngx_out_sep'])
@@ -465,10 +486,11 @@ def collect(url):
             pass
 
     except Exception as e:
-        traceback.print_exc(file = sys.stderr)
+        traceback.print_exc(file=sys.stderr)
 
     sys.stdout.flush()
     sys.stderr.flush()
+
 
 if __name__ == "__main__":
 
