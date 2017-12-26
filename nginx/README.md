@@ -1,6 +1,6 @@
 ### 监控nginx
 
-** 使用说明：https://github.com/GuyCheung/falcon-ngx_metric **
+**使用说明：https://github.com/GuyCheung/falcon-ngx_metric**
 
 在该目录下新建config.ini，并写入以下内容
 
