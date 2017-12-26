@@ -478,8 +478,8 @@ def collect(url):
 
         print(json.dumps(datapoints, indent=4, sort_keys=True))
 
-        if options['format'] == 'falcon' and options['falcon_addr'] != '':
-            r = requests.post(options['falcon_addr'], data=json.dumps(datapoints))
+        if options['format'] == 'falcon' and options['agent_addr'] != '':
+            r = requests.post(options['agent_addr'], data=json.dumps(datapoints))
             print("push to falcon result: " + r.text)
 
         else:
@@ -503,7 +503,7 @@ if __name__ == "__main__":
     url = nginx_config['url']
 
     options = dict()
-    keys = ['endpoint', 'format', 'ngx_out_sep', 'agent_addr', 'falcon_step']
+    keys = ['service', 'format', 'ngx_out_sep', 'agent_addr', 'falcon_step']
     for key in keys:
         options.update({key: agent_config[key]})
 
