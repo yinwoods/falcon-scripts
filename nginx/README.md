@@ -4,6 +4,7 @@
 
 在该目录下新建config.ini，并写入以下内容
 
+```ini
 [nginx]
 url = nginx 收集url
 
@@ -13,3 +14,4 @@ format = falcon
 ngx_out_sep = |
 agent_addr = agent api地址
 falcon_step = 60
+```
