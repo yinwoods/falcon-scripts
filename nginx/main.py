@@ -503,7 +503,7 @@ if __name__ == "__main__":
     url = nginx_config['url']
 
     options = dict()
-    keys = ['service', 'format', 'ngx_out_sep', 'falcon_addr', 'falcon_step']
+    keys = ['endpoint', 'format', 'ngx_out_sep', 'agent_addr', 'falcon_step']
     for key in keys:
         options.update({key: agent_config[key]})
 
