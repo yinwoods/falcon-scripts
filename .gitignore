@@ -1,1 +1,4 @@
 **.ini
+**log
+**__pycache__
+**conf
