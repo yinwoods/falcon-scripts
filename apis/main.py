@@ -1,23 +1,34 @@
 import json
+import time
 import requests
-from configparser import ConfigParser
+import subprocess
+from configparser import ConfigParser, BasicInterpolation
 
 
-def changba_feed_recommend():
+def main():
 
-    config = ConfigParser()
+    config = ConfigParser(interpolation=BasicInterpolation())
     config.read('./config.ini')
-    changba_config = config['changba_feed_recommend']
 
-    url = changba_config['url']
-    data = changba_config['data']
-    headers = json.loads(changba_config['headers'])
+    agent_conf = config["agent"]
+    changbafeed_conf = config['changbafeed']
 
-    response = requests.post(url, data=data, headers=headers)
-    print(response.json())
-    print(response.elapsed.microseconds)
-    print(response.status_code)
+    command = changbafeed_conf["command"]
+    result = subprocess.check_output(command, shell=True).decode('utf8')
+    count = int(result.split()[0])
+
+    result = [{
+        "endpoint": agent_conf["endpoint"],
+        "metric": "request_count",
+        "timestamp": int(time.time()),
+        "step": 60,
+        "value": count,
+        "counterType": "GAUGE",
+        "tags": f"api={changbafeed_conf['api']}"
+    }]
+    result = requests.post(agent_conf["address"], data=json.dumps(result))
+    print(result.text)
 
 
 if __name__ == '__main__':
-    changba_feed_recommend()
+    main()
